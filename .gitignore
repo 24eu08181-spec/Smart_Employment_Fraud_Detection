@@ -1,0 +1,14 @@
+backend/data/store.json
+.env
+**/.env
+!.env.example
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+frontend/dist/
+ml-service/data/*.csv
+.DS_Store

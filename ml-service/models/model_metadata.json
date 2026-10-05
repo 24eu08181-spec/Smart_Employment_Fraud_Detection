@@ -1,0 +1,49 @@
+{
+  "training_date": "2026-10-02T23:44:23.584821",
+  "dataset_size": 17645,
+  "training_size": 14116,
+  "testing_size": 3529,
+  "accuracy": 0.9827146500425049,
+  "precision": 0.8627450980392157,
+  "recall": 0.7674418604651163,
+  "f1_score": 0.8123076923076923,
+  "model_name": "Linear SVM",
+  "feature_count": 5000,
+  "confusion_matrix": [
+    [
+      3336,
+      21
+    ],
+    [
+      40,
+      132
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9881516587677726,
+      "recall": 0.9937444146559428,
+      "f1-score": 0.99094014555176,
+      "support": 3357.0
+    },
+    "1": {
+      "precision": 0.8627450980392157,
+      "recall": 0.7674418604651163,
+      "f1-score": 0.8123076923076923,
+      "support": 172.0
+    },
+    "accuracy": 0.9827146500425049,
+    "macro avg": {
+      "precision": 0.9254483784034941,
+      "recall": 0.8805931375605296,
+      "f1-score": 0.9016239189297262,
+      "support": 3529.0
+    },
+    "weighted avg": {
+      "precision": 0.9820394659524392,
+      "recall": 0.9827146500425049,
+      "f1-score": 0.9822337749204254,
+      "support": 3529.0
+    }
+  }
+}

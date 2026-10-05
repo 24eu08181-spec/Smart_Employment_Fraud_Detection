@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #e2e8f0;
+  background: #020817;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(14, 116, 144, 0.16), transparent 35%), #020817;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.card-surface {
+  @apply rounded-2xl border border-slate-700 bg-slate-900/80 shadow-glow backdrop-blur-sm;
+}
+
+.metric-card {
+  @apply card-surface p-5;
+}
+
+label {
+  @apply mb-2 block text-sm font-medium text-slate-300;
+}
+
+input,
+textarea,
+select {
+  @apply w-full rounded-xl border border-slate-700 bg-slate-950/80 px-3 py-2.5 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  @apply transition duration-200;
+}
+
+.table-wrap {
+  @apply overflow-x-auto rounded-2xl border border-slate-700;
+}
+
+.chart-bar {
+  @apply rounded-t-md bg-gradient-to-t from-cyan-500 to-blue-400;
+}
