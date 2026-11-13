@@ -7,6 +7,7 @@ import {
   getModelInfo,
   getPredictionById,
   getPredictions,
+  getTrainingHistory,
   trainModelController,
 } from '../controllers/predictionController.js';
 
@@ -18,6 +19,7 @@ router.get('/predictions/:id', getPredictionById);
 router.delete('/predictions/:id', deletePrediction);
 router.get('/dashboard/stats', getDashboardStats);
 router.get('/model-info', getModelInfo);
+router.get('/training-history', getTrainingHistory);
 router.get('/health', getHealthCheck);
 router.post('/train-model', trainModelController);
 

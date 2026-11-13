@@ -24,11 +24,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           ['Total Notifications', stats?.totalAdsAnalyzed ?? 0],
           ['Genuine', stats?.genuine ?? 0],
-          ['Suspicious', stats?.suspicious ?? 0],
           ['Fake', stats?.fake ?? 0],
           ['Average risk score', stats?.averageRiskScore ?? 0],
         ].map(([label, value]) => (

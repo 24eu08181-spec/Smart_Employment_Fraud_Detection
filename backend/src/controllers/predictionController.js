@@ -5,8 +5,9 @@ import {
   getDashboardStats as readDashboardStats,
   getPrediction,
   listPredictions,
+  listTrainingRuns,
   updateTrainingRun,
-} from '../storage/jsonStore.js';
+} from '../storage/sqliteStore.js';
 import {
   getModelInfo as getModelMetadata,
   healthCheck,
@@ -65,7 +66,7 @@ export async function analyzeJob(req, res, next) {
     const result = await predictAdvertisement(input);
     const record = sanitizePredictionRecord(input, result);
 
-    const saved = await createPrediction(record);
+    const saved = await createPrediction(record, req.user.id);
 
     res.status(200).json({
       success: true,
@@ -82,7 +83,7 @@ export async function analyzeJob(req, res, next) {
 export async function getPredictions(req, res, next) {
   try {
     const { status, sort = 'createdAt', order = 'desc' } = req.query;
-    const predictions = await listPredictions({ status, sort, order });
+    const predictions = await listPredictions({ status, sort, order }, req.user.id);
 
     res.json({ success: true, data: predictions });
   } catch (error) {
@@ -92,7 +93,7 @@ export async function getPredictions(req, res, next) {
 
 export async function getPredictionById(req, res, next) {
   try {
-    const prediction = await getPrediction(req.params.id);
+    const prediction = await getPrediction(req.params.id, req.user.id);
     if (!prediction) {
       return res.status(404).json({ success: false, message: 'Prediction not found.' });
     }
@@ -105,7 +106,7 @@ export async function getPredictionById(req, res, next) {
 
 export async function deletePrediction(req, res, next) {
   try {
-    const deleted = await removePrediction(req.params.id);
+    const deleted = await removePrediction(req.params.id, req.user.id);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Prediction not found.' });
     }
@@ -120,7 +121,7 @@ export async function getDashboardStats(req, res, next) {
   try {
     res.json({
       success: true,
-      data: await readDashboardStats(),
+      data: await readDashboardStats(req.user.id),
     });
   } catch (error) {
     next(error);
@@ -146,6 +147,14 @@ export async function getModelInfo(req, res, next) {
   }
 }
 
+export async function getTrainingHistory(req, res, next) {
+  try {
+    res.json({ success: true, data: await listTrainingRuns(req.user.id) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getHealthCheck(req, res, next) {
   try {
     const result = await healthCheck();
@@ -168,32 +177,51 @@ export async function trainModelController(req, res, next) {
     }
 
     const trainingRun = await createTrainingRun({
-      startedAt: new Date(),
+      startedAt: new Date().toISOString(),
       status: 'training',
-    });
+    }, req.user.id);
 
-    const result = await trainModel();
+    try {
+      const result = await trainModel();
 
-    await updateTrainingRun(trainingRun._id, {
-      completedAt: new Date(),
-      status: 'completed',
-      datasetSize: result.dataset_size || result.datasetSize || 0,
-      trainingSize: result.training_size || result.trainingSize || 0,
-      testingSize: result.testing_size || result.testingSize || 0,
-      accuracy: result.accuracy || 0,
-      precision: result.precision || 0,
-      recall: result.recall || 0,
-      f1Score: result.f1_score || result.f1Score || 0,
-      modelName: result.model_name || result.modelName || 'Linear SVM',
-    });
+      await updateTrainingRun(trainingRun._id, {
+        completedAt: new Date().toISOString(),
+        status: 'completed',
+        datasetName: result.dataset_name || result.datasetName || 'EMSCAD',
+        datasetSize: result.dataset_size ?? result.datasetSize ?? 0,
+        trainingSize: result.training_size ?? result.trainingSize ?? 0,
+        testingSize: result.testing_size ?? result.testingSize ?? 0,
+        classCounts: result.class_counts ?? result.classCounts ?? {},
+        trainingClassCounts: result.training_class_counts ?? result.trainingClassCounts ?? {},
+        testingClassCounts: result.testing_class_counts ?? result.testingClassCounts ?? {},
+        averageRiskScore: result.average_risk_score ?? result.averageRiskScore ?? 0,
+        trainingAverageRiskScore: result.training_average_risk_score ?? result.trainingAverageRiskScore ?? 0,
+        testingAverageRiskScore: result.testing_average_risk_score ?? result.testingAverageRiskScore ?? 0,
+        accuracy: result.accuracy ?? 0,
+        balancedAccuracy: result.balanced_accuracy ?? result.balancedAccuracy ?? 0,
+        precision: result.precision ?? 0,
+        recall: result.recall ?? 0,
+        f1Score: result.f1_score ?? result.f1Score ?? 0,
+        specificity: result.specificity ?? 0,
+        confusionMatrix: result.confusion_matrix ?? result.confusionMatrix ?? [],
+        modelName: result.model_name || result.modelName || 'Linear SVM',
+      }, req.user.id);
 
-    res.json({
-      success: true,
-      data: {
-        ...result,
-        trainingRunId: trainingRun._id,
-      },
-    });
+      res.json({
+        success: true,
+        data: {
+          ...result,
+          trainingRunId: trainingRun._id,
+        },
+      });
+    } catch (error) {
+      await updateTrainingRun(trainingRun._id, {
+        completedAt: new Date().toISOString(),
+        status: 'failed',
+        error: error.message,
+      }, req.user.id);
+      throw error;
+    }
   } catch (error) {
     next(error);
   }

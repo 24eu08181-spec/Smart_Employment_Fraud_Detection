@@ -6,7 +6,7 @@ export default function AboutPage() {
 
       <div className="mt-6 space-y-4 text-slate-200">
         <p>
-          SMART EMPLOYMENT FRAUD DETECTION is an academic ML and NLP system designed to detect fraudulent online recruitment content.
+          ON JOB RECRUITMENT FRAUD DETECTION is an academic ML and NLP system designed to detect fraudulent online recruitment content.
         </p>
         <p>
           The system combines a rule-based fraud indicator engine with a Linear SVM classifier trained on TF-IDF text features. This separation keeps the ML prediction explainable while still allowing a risk score to reflect suspicious language, salary anomalies, and weak verification signals.

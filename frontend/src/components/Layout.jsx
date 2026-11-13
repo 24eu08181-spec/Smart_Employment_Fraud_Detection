@@ -1,23 +1,26 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { name: 'Dashboard', to: '/' },
+  { name: 'Dataset Overview', to: '/dataset-overview' },
   { name: 'Analyze Job', to: '/analyze' },
   { name: 'History', to: '/history' },
   { name: 'Analytics', to: '/analytics' },
-  { name: 'Model Info', to: '/model-info' },
-  { name: 'About', to: '/about' },
+  { name: 'Settings', to: '/settings' },
 ];
 
 export default function Layout() {
+  const { user } = useAuth();
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="app-shell min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row">
         <aside className="lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-72">
           <div className="card-surface h-full p-5">
             <div className="mb-8">
               <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">Fraud Detection</p>
-              <h1 className="mt-3 text-2xl font-bold text-white">Smart Employment</h1>
+              <h1 className="mt-3 text-2xl font-bold text-white">On Job Recruitment</h1>
             </div>
 
             <nav className="space-y-2">
@@ -38,6 +41,19 @@ export default function Layout() {
                 </NavLink>
               ))}
             </nav>
+
+            <NavLink
+              className="mt-8 flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-3 transition hover:border-cyan-500/50"
+              to="/settings"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 font-semibold text-cyan-200">
+                {user.fullName.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-white">{user.fullName}</span>
+                <span className="block truncate text-xs text-slate-400">{user.email}</span>
+              </span>
+            </NavLink>
 
             <div className="mt-10 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100">
               Academic ML + NLP pipeline for recruitment fraud analysis.

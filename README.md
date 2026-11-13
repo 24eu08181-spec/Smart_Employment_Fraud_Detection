@@ -78,7 +78,7 @@ The frontend is built with:
 This is where the user fills in job details such as title, company, description, requirements, salary, recruiter email, and source link.
 
 ### 2.2 Backend folder
-This holds the main API. It receives requests from the frontend, validates them, saves history to a local JSON file, and calls the ML service.
+This holds the main API. It receives requests from the frontend, validates them, saves history in a local SQLite database, and calls the ML service.
 
 It does not train the model itself. Instead, it sends the advertisement to the Python ML service and gets the prediction back.
 
@@ -477,33 +477,12 @@ export async function trainModel() {
 
 So the backend is simply a client calling the ML service.
 
-### `backend/src/storage/jsonStore.js`
-This file stores prediction history in a local JSON file instead of a database.
+### `backend/src/storage/sqliteStore.js`
+This module stores prediction history and model-training runs in SQLite, using the `better-sqlite3` package. The database is created automatically at:
 
-```js
-const dataPath = fileURLToPath(new URL('../../data/store.json', import.meta.url));
-```
+`backend/data/predictions.sqlite`
 
-This points to the file that stores all records:
-
-`backend/data/store.json`
-
-It writes data safely with temporary files and atomic rename:
-
-```js
-const temporaryPath = `${dataPath}.${randomUUID()}.tmp`;
-await writeFile(temporaryPath, JSON.stringify(store, null, 2), 'utf8');
-await rename(temporaryPath, dataPath);
-```
-
-This makes the write process safer and reduces the chance of corrupting the JSON file.
-
-The store keeps two arrays:
-
-- `predictions`
-- `trainingRuns`
-
-This is a simple database replacement for a beginner project.
+SQLite is an embedded database, so there is no separate database server to install or start. The database file is local and excluded from Git. Existing records in `backend/data/store.json` are imported once when the backend first starts with SQLite; the JSON file is left unchanged as a backup.
 
 ---
 
@@ -722,7 +701,7 @@ What happens?
    - sees suspicious phrases like “registration fee” and “personal email”
    - calculates a high risk score
 5. The backend receives the result
-6. The backend stores it in `backend/data/store.json`
+6. The backend stores it in the SQLite database at `backend/data/predictions.sqlite`
 7. Frontend displays the final result page
 
 This is where the model logic and fraud rules come together.
@@ -731,18 +710,18 @@ This is where the model logic and fraud rules come together.
 
 ## 11. Data storage flow
 
-The app stores prediction records locally in JSON instead of a database.
+The app stores prediction and training history locally in the SQLite database.
 
 File:
 
-`backend/data/store.json`
+`backend/data/predictions.sqlite`
 
 This file stores:
 
 - previous predictions
-- metadata
+- user accounts and session records
+- model training history
 - timestamps
-- training runs
 
 This is useful for demos and academic projects, because it avoids needing MongoDB or PostgreSQL.
 
@@ -752,7 +731,7 @@ This is useful for demos and academic projects, because it avoids needing MongoD
 
 The ML model is trained only when the dataset is ready.
 
-The required dataset is: `ml-service/data/emscad.csv`
+The default dataset is: `ml-service/data/emscad.csv`. A custom CSV path can also be supplied as the training command's first argument.
 
 If it does not exist, the app will show an appropriate message and the service cannot train the model.
 
@@ -760,7 +739,7 @@ The training command is:
 
 ```powershell
 Set-Location ml-service
-.\.venv\Scripts\python.exe .\src\train_model.py
+.\.venv\Scripts\python.exe .\src\train_model.py "C:\Users\DELL\Downloads\DataSet.csv"
 ```
 
 After training, the project produces:
@@ -768,6 +747,10 @@ After training, the project produces:
 - `ml-service/models/tfidf_vectorizer.joblib`
 - `ml-service/models/svm_model.joblib`
 - `ml-service/models/model_metadata.json`
+
+Training removes exact duplicate rows before making a stratified 80/20 split, which prevents repeated identical job ads from appearing in both sets. The evaluation report includes accuracy, balanced accuracy, fake-ad precision and recall, F1, specificity, and a confusion matrix. Since fake ads are a small minority in EMSCAD, accuracy alone does not describe performance; check the fake-ad recall as well. The dataset filename and SHA-256 fingerprint are recorded in the metadata.
+
+The dashboard shows the unique dataset size, training/test row counts and class distributions, training-split genuine/fake totals, and average risk score. The average risk is calculated across the complete unique dataset using the trained model and the app's risk rules. Each training run initiated by the backend is saved to SQLite and appears under **History → Model training**, including the dataset name, split sizes, class counts, average risk, accuracy, fake-ad recall, and F1 score.
 
 These are the trained artifacts that the prediction service uses.
 
@@ -823,7 +806,9 @@ Set-Location backend
 npm start
 ```
 
-This starts the Node.js server on port `5000`.
+This starts the Node.js server on port `5000`. On first startup, the backend creates `backend/data/predictions.sqlite` and imports any existing prediction history from `backend/data/store.json`. No separate database server is needed.
+
+Create an account at `http://localhost:5173/signup` before using the app. Sign-in uses a server-managed, HTTP-only session cookie; passwords are stored as salted scrypt hashes. Prediction history is kept separate for each account. Open **Settings** from the sidebar to edit your name or email address, or log out.
 
 ### 7. Start the frontend
 
@@ -851,13 +836,21 @@ This usually opens a local React app at `http://localhost:5173`.
 ### Backend endpoints
 
 - `GET /api/health` → checks backend status
+- `POST /api/auth/signup` → create an account with `fullName`, `email`, and `password`
+- `POST /api/auth/login` → sign in with `email` and `password`
+- `GET /api/auth/me` → get the signed-in account details
+- `PUT /api/auth/profile` → update the signed-in user's `fullName` and `email`
+- `POST /api/auth/logout` → end the current session
 - `POST /api/predict` → analyze a single job advertisement
 - `GET /api/predictions` → list previous predictions
 - `GET /api/predictions/:id` → fetch one result
 - `DELETE /api/predictions/:id` → delete one result
 - `GET /api/dashboard/stats` → get summary metrics
 - `GET /api/model-info` → get model information
+- `GET /api/training-history` → list the signed-in user's model training runs
 - `POST /api/train-model` → trigger training
+
+All prediction, history, dashboard, and model endpoints require a signed-in session. Each account sees and manages only its own saved predictions.
 
 ---
 
@@ -978,7 +971,7 @@ If you want to become strong in this project, learn these topics next:
 - Python FastAPI basics
 - TF-IDF and text vectorization
 - Linear SVM
-- JSON file storage
+- SQLite database storage
 - environment variables
 
 ---
