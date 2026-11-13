@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/dataset-overview", "destination": "/index.html" },
+    { "source": "/analyze", "destination": "/index.html" },
+    { "source": "/result", "destination": "/index.html" },
+    { "source": "/history", "destination": "/index.html" },
+    { "source": "/analytics", "destination": "/index.html" },
+    { "source": "/model-info", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/index.html" }
+  ]
+}

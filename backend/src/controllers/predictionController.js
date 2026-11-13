@@ -7,7 +7,7 @@ import {
   listPredictions,
   listTrainingRuns,
   updateTrainingRun,
-} from '../storage/sqliteStore.js';
+} from '../storage/index.js';
 import {
   getModelInfo as getModelMetadata,
   healthCheck,

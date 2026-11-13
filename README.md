@@ -995,4 +995,46 @@ If you study this README together with the project files in the order above, you
 
 - The frontend and backend must communicate through the configured environment variable `ML_SERVICE_URL`.
 - The project includes a clear distinction between ML prediction and rule-based fraud indicator output.
-- The JSON store is intended for local, single-process use; it is not suitable for multiple backend instances writing concurrently.
+- Local development uses SQLite. Set `DATABASE_URL` to use the PostgreSQL storage adapter in deployment.
+
+## 24. Deploy with Vercel, Render, and Supabase
+
+The repository includes a Vercel configuration for the React app and API proxy, plus a Render Blueprint for the Express and Python services. Supabase PostgreSQL stores accounts, sessions, predictions, and training history in production.
+
+### 1. Create a Supabase project
+
+Create a Supabase project and copy its PostgreSQL connection string from **Connect**. Render services use IPv4, so use the Supabase session-pooler connection string if the direct connection is not reachable. URL-encode special characters in the database password.
+
+The backend creates its required tables on first use. Do not expose the database connection string in frontend variables or source code.
+
+### 2. Deploy the API and ML services to Render
+
+In Render, create a **Blueprint** from this repository's `render.yaml`. The Blueprint creates:
+
+- `smart-employment-fraud-ml`, running the FastAPI model service
+- `smart-employment-fraud-api`, running the Express API
+
+Set these environment variables for the API service in Render:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | Supabase PostgreSQL connection string |
+| `ML_SERVICE_URL` | Public origin of the Render ML service, without a trailing slash |
+| `ADMIN_TOKEN` | A newly generated, strong random value |
+| `FRONTEND_ORIGINS` | Your Vercel deployment origin, such as `https://your-app.vercel.app` |
+
+Render's free services can sleep when idle, so the first request after a pause may take longer. The training dataset is not committed to this repository; inference uses the checked-in model artifacts, but retraining requires supplying the dataset privately to the ML service.
+
+### 3. Deploy the frontend to Vercel
+
+Import the repository into Vercel and set **Root Directory** to `frontend`. Use the Vite build command `npm run build` and output directory `dist`. Set this server-side environment variable in Vercel:
+
+| Variable | Value |
+| --- | --- |
+| `BACKEND_API_URL` | Public origin of the Render API service, without `/api` |
+
+The Vercel API function proxies `/api/*` requests to Render so the browser uses same-origin HTTP-only session cookies. The frontend defaults to this proxy in production; local Vite development continues to use `http://localhost:5000/api`.
+
+### 4. Verify the deployment
+
+Check `https://<your-api-service>.onrender.com/api/health`, `https://<your-ml-service>.onrender.com/health`, and your Vercel site. Create a new account on the deployed site; local SQLite users and history are not automatically copied to Supabase.

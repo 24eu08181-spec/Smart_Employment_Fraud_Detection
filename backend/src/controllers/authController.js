@@ -8,7 +8,7 @@ import {
   findUserById,
   findUserBySession,
   updateUserProfile,
-} from '../storage/sqliteStore.js';
+} from '../storage/index.js';
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 
 const scrypt = promisify(scryptCallback);
@@ -53,10 +53,10 @@ async function passwordMatches(password, storedHash) {
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
-function createLoginSession(res, user) {
+async function createLoginSession(res, user) {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + sessionLifetimeSeconds * 1000).toISOString();
-  createSession(user.id, token, expiresAt);
+  await createSession(user.id, token, expiresAt);
   setSessionCookie(res, token);
   return findUserById(user.id);
 }
@@ -77,14 +77,14 @@ export async function signup(req, res, next) {
     if (password.length < 8 || password.length > 128) {
       return res.status(400).json({ success: false, message: 'Password must be between 8 and 128 characters.' });
     }
-    if (findUserByEmail(email)) {
+    if (await findUserByEmail(email)) {
       return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
     }
 
-    const user = createUser({ fullName, email, passwordHash: await hashPassword(password) });
-    res.status(201).json({ success: true, data: createLoginSession(res, user) });
+    const user = await createUser({ fullName, email, passwordHash: await hashPassword(password) });
+    res.status(201).json({ success: true, data: await createLoginSession(res, user) });
   } catch (error) {
-    if (error.message?.includes('UNIQUE constraint failed: users.email')) {
+    if (error.code === '23505' || error.message?.includes('UNIQUE constraint failed: users.email')) {
       return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
     }
     next(error);
@@ -96,12 +96,12 @@ export async function login(req, res, next) {
     const body = req.body ?? {};
     const email = normalizeEmail(body.email);
     const password = typeof body.password === 'string' ? body.password : '';
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (!user || !(await passwordMatches(password, user.password_hash))) {
       return res.status(401).json({ success: false, message: 'Email or password is incorrect.' });
     }
 
-    res.json({ success: true, data: createLoginSession(res, user) });
+    res.json({ success: true, data: await createLoginSession(res, user) });
   } catch (error) {
     next(error);
   }
@@ -111,7 +111,7 @@ export function currentUser(req, res) {
   res.json({ success: true, data: req.user });
 }
 
-export function updateProfile(req, res) {
+export async function updateProfile(req, res, next) {
   const body = req.body ?? {};
   const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
   const email = normalizeEmail(body.email);
@@ -121,16 +121,27 @@ export function updateProfile(req, res) {
   if (email.length > 254 || !emailPattern.test(email)) {
     return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
   }
-  if (emailBelongsToAnotherUser(email, req.user.id)) {
-    return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
-  }
+  try {
+    if (await emailBelongsToAnotherUser(email, req.user.id)) {
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    }
 
-  const user = updateUserProfile(req.user.id, { fullName, email });
-  res.json({ success: true, data: user });
+    const user = await updateUserProfile(req.user.id, { fullName, email });
+    res.json({ success: true, data: user });
+  } catch (error) {
+    if (error.code === '23505' || error.message?.includes('UNIQUE constraint failed: users.email')) {
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    }
+    next(error);
+  }
 }
 
-export function logout(req, res) {
-  deleteSession(req.cookies?.[sessionCookieName]);
-  clearSessionCookie(res);
-  res.json({ success: true, message: 'You have been logged out.' });
+export async function logout(req, res, next) {
+  try {
+    await deleteSession(req.cookies?.[sessionCookieName]);
+    clearSessionCookie(res);
+    res.json({ success: true, message: 'You have been logged out.' });
+  } catch (error) {
+    next(error);
+  }
 }
