@@ -83,7 +83,7 @@ export default function SettingsPage() {
           <h3 className="font-semibold text-white">Sign out</h3>
           <p className="mt-1 text-sm text-slate-400">End your session on this device.</p>
         </div>
-        <button className="rounded-xl border border-rose-400/40 px-5 py-2.5 text-sm font-semibold text-rose-200 hover:bg-rose-400/10 disabled:opacity-60" disabled={loggingOut} onClick={signOut} type="button">
+        <button className="rounded-xl border border-slate-600 bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 disabled:cursor-not-allowed disabled:opacity-60" disabled={loggingOut} onClick={signOut} type="button">
           {loggingOut ? 'Signing out…' : 'Log out'}
         </button>
       </section>
