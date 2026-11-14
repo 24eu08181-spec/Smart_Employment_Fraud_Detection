@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getDashboardStats, getModelInfo } from '../services/api';
+import { getDashboardStats } from '../services/api';
+import PublicSampleEvaluation from '../components/PublicSampleEvaluation';
+import publicEvaluation from '../data/publicSampleEvaluation.json';
 
 const metricColors = {
   Accuracy: '#2563eb',
@@ -17,19 +19,14 @@ function percentage(value) {
 
 export default function LiveDashboardPage() {
   const [stats, setStats] = useState(null);
-  const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsResponse, modelResponse] = await Promise.all([
-          getDashboardStats(),
-          getModelInfo(),
-        ]);
+        const statsResponse = await getDashboardStats();
         setStats(statsResponse.data.data);
-        setModelInfo(modelResponse.data.data);
       } catch (fetchError) {
         console.error(fetchError);
         setError(fetchError.response?.data?.message || 'Unable to load dashboard data.');
@@ -57,10 +54,10 @@ export default function LiveDashboardPage() {
     ['Average Risk Score', stats?.averageRiskScore ?? 0, true],
   ];
   const modelMetrics = [
-    ['Accuracy', modelInfo?.accuracy],
-    ['Precision', modelInfo?.precision],
-    ['Recall', modelInfo?.recall],
-    ['F1 Score', modelInfo?.f1_score ?? modelInfo?.['f1 score'] ?? modelInfo?.f1Score],
+    ['Accuracy', publicEvaluation.accuracy],
+    ['Precision', publicEvaluation.precision],
+    ['Recall', publicEvaluation.recall],
+    ['F1 Score', publicEvaluation.f1_score],
   ];
   const notificationTotal = Number(stats?.totalAdsAnalyzed ?? 0);
   const graphValues = [
@@ -175,12 +172,14 @@ export default function LiveDashboardPage() {
         </div>
       </section>
 
+      <PublicSampleEvaluation />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <section className="card-surface p-5">
-            <h3 className="mb-1 text-xl font-semibold text-white">Model Performance Pie Chart</h3>
+            <h3 className="mb-1 text-xl font-semibold text-white">40-Record Sample Performance Pie Chart</h3>
             <p className="mb-5 text-sm text-slate-400">
-              These test-set metrics change when the model is retrained, not with individual predictions.
+              Metrics are measured against labels in the public held-out sample.
             </p>
             <div className="grid grid-cols-2 gap-4">
               {modelMetrics.map(([label, value]) => {

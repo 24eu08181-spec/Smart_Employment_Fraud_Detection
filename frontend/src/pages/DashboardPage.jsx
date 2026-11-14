@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getModelInfo, getTrainingHistory } from '../services/api';
+import PublicSampleEvaluation from '../components/PublicSampleEvaluation';
+import publicEvaluation from '../data/publicSampleEvaluation.json';
 
 const metricColors = {
   Accuracy: '#2563eb',
@@ -54,10 +56,10 @@ export default function DashboardPage() {
   const testingAverageRiskScore = latestCompletedRun?.testingAverageRiskScore ?? modelInfo?.testing_average_risk_score;
   const formatCount = (value) => Number(value ?? 0).toLocaleString();
   const metricValues = [
-    ['Accuracy', modelInfo?.accuracy],
-    ['Precision', modelInfo?.precision],
-    ['Recall', modelInfo?.recall],
-    ['F1 Score', modelInfo?.f1_score ?? modelInfo?.['f1 score'] ?? modelInfo?.f1Score],
+    ['Accuracy', publicEvaluation.accuracy],
+    ['Precision', publicEvaluation.precision],
+    ['Recall', publicEvaluation.recall],
+    ['F1 Score', publicEvaluation.f1_score],
   ];
   const trainingGenuine = Number(trainingClassCounts?.genuine ?? 0);
   const trainingFake = Number(trainingClassCounts?.fake ?? 0);
@@ -110,6 +112,8 @@ export default function DashboardPage() {
           <h2 className="mt-2 text-3xl font-bold text-white">Dataset Overview</h2>
         </div>
       </div>
+
+      <PublicSampleEvaluation />
 
       <div className="grid gap-6 xl:grid-cols-2">
         {renderDatasetMetrics(
@@ -205,9 +209,9 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="card-surface p-5">
-          <h3 className="mb-1 text-xl font-semibold text-white">Performance Pie Chart</h3>
+          <h3 className="mb-1 text-xl font-semibold text-white">40-Record Sample Performance Pie Chart</h3>
           <p className="mb-5 text-sm text-slate-400">
-            Each chart shows a model metric as a percentage of its full score.
+            Metrics are measured against the public sample&apos;s dataset labels, not the full test set.
           </p>
           <div className="grid grid-cols-2 gap-4">
             {metricValues.map(([label, value]) => {
