@@ -15,10 +15,10 @@ export default function PublicSampleEvaluation() {
   return (
     <section className="card-surface space-y-5 p-5">
       <div>
-        <h3 className="text-xl font-semibold text-white">40-Record Public Dataset Evaluation</h3>
+        <h3 className="text-xl font-semibold text-white">40-Record Benchmark Summary</h3>
         <p className="mt-1 text-sm text-slate-400">
-          Balanced sample from the model&apos;s held-out test split. The labels are dataset references,
-          not live verification of current job listings.
+          Aggregate results from a balanced sample in the model&apos;s held-out test split. Individual
+          posting details are not stored in the project; dataset labels are not live verification of jobs.
         </p>
         <a
           className="mt-2 inline-block text-sm font-medium text-cyan-300 underline hover:text-cyan-200"
@@ -108,47 +108,6 @@ export default function PublicSampleEvaluation() {
         </p>
       </div>
 
-      <details>
-        <summary className="cursor-pointer text-sm font-semibold text-cyan-300">
-          View all 40 sample inputs and predictions
-        </summary>
-        <div className="mt-3 max-h-96 overflow-auto rounded-xl border border-slate-700">
-          <table className="min-w-full divide-y divide-slate-700 text-left text-sm">
-            <thead className="sticky top-0 bg-slate-900 text-slate-300">
-              <tr>
-                <th className="px-3 py-2">Job title / location</th>
-                <th className="px-3 py-2">Input excerpt</th>
-                <th className="px-3 py-2">Dataset label</th>
-                <th className="px-3 py-2">Model result</th>
-                <th className="px-3 py-2">Risk</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {evaluation.records.map((record) => (
-                <tr key={record.sample_id}>
-                  <td className="px-3 py-2">
-                    <span className="block font-medium text-white">{record.job_title || 'Untitled posting'}</span>
-                    <span className="text-xs text-slate-400">{record.location || 'Location not listed'}</span>
-                  </td>
-                  <td className="max-w-xl px-3 py-2 text-xs text-slate-300">
-                    <span className="block">{record.description_excerpt || 'No description supplied.'}</span>
-                    {record.requirements_excerpt && (
-                      <span className="mt-1 block text-slate-400">
-                        Requirements: {record.requirements_excerpt}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-slate-200">{record.actual_label}</td>
-                  <td className={`px-3 py-2 font-medium ${record.correct ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    {record.predicted_label}{record.correct ? ' - match' : ' - mismatch'}
-                  </td>
-                  <td className="px-3 py-2 text-slate-200">{record.risk_score}/100</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
     </section>
   );
 }
